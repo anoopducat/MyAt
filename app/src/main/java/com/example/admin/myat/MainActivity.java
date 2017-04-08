@@ -6,6 +6,8 @@ import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.style.ForegroundColorSpan;
+import android.widget.CalendarView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -32,17 +34,26 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
-import static com.example.admin.myat.R.id.calendarView;
+import static com.example.admin.myat.R.string.calendar;
+
 
 public class MainActivity extends AppCompatActivity {
 
 
     private static  Date date;
-    MaterialCalendarView materialCalendarView;
+    CalendarView simpleCalendarView;
 
     RequestQueue requestQueue;
 
+    Calendar cal;
+
+
+
     String url ="http://203.124.96.117:8063/Service1.asmx/Attendance";
+
+    String det;
+
+    TextView tv1;
 
 
 
@@ -54,60 +65,66 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-      Calendar cal1 = Calendar.getInstance();
-        //cal1.set(2017, 1, 3);
-         //Calendar cal2 = Calendar.getInstance();
-       // cal2.set(2017, 2, 3);
-
-       HashSet<CalendarDay> setDays = getCalendarDaysSet(cal1);
+        tv1= (TextView) findViewById(R.id.tv_de);
 
 
-
-        materialCalendarView= (MaterialCalendarView) findViewById(calendarView);
-        materialCalendarView.state().edit()
-                .setFirstDayOfWeek(Calendar.MONDAY)
-                .setMinimumDate(CalendarDay.from(1900, 1, 1))
-                .setMaximumDate(CalendarDay.from(2100, 12, 31))
-                .setCalendarDisplayMode(CalendarMode.MONTHS)
-                .commit();
+        simpleCalendarView = (CalendarView) findViewById(R.id.simpleCalendarView); // get the reference of CalendarView
+        simpleCalendarView.setFocusedMonthDateColor(Color.RED); // set the red color for the dates of  focused month
+        simpleCalendarView.setUnfocusedMonthDateColor(Color.BLUE); // set the yellow color for the dates of an unfocused month
+        simpleCalendarView.setSelectedWeekBackgroundColor(Color.RED); // red color for the selected week's background
+        simpleCalendarView.setWeekSeparatorLineColor(Color.GREEN); // green color for the week separator line
+        // perform setOnDateChangeListener event on CalendarView
+        simpleCalendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
+            @Override
+            public void onSelectedDayChange(CalendarView view, int year, int month, int dayOfMonth) {
+                // display the selected date by using a toast
+                Toast.makeText(getApplicationContext(), dayOfMonth + "/" + month + "/" + year, Toast.LENGTH_LONG).show();
+            }
+        });
 
         requestQueue=Volley.newRequestQueue(this);
 
-        materialCalendarView.addDecorator(new EventDecorator(R.color.colorAccent,setDays));
-
-        JsonArrayRequest jsonArrayRequest=new JsonArrayRequest(Request.Method.POST, url, null, new Response.Listener<JSONArray>() {
+        JsonArrayRequest jsn=new JsonArrayRequest(Request.Method.POST, url, null, new Response.Listener<JSONArray>() {
             @Override
             public void onResponse(JSONArray response) {
 
-                Toast.makeText(MainActivity.this, "success", Toast.LENGTH_SHORT).show();
-
-                //SimpleDateFormatter formatter = new SimpleDateFormatter();
-                SimpleDateFormat format=new SimpleDateFormat("dd//mm//yyyy");
-
-                List<Event> events = new ArrayList<>();
-
-                for(int i=0;i<response.length();i++){
-
+                for(int i=0;i<response.length();i++)
+                {
                     try {
-                        JSONObject object=response.getJSONObject(0);
+                        JSONObject obj= (JSONObject) response.get(5);
 
-                        String det=object.getString("Att_date");
+                        det=obj.getString("Att_date");
+                        tv1.setText(det);
+                        SimpleDateFormat df=new SimpleDateFormat("dd/mm/yyyy");
+                        Date da=df.parse(det);
+                        long milis=da.getTime();
+                        simpleCalendarView.setDate(milis);
 
-                        Date date = format.parse(det);
+                        //Toast.makeText(MainActivity.this, "" + det, Toast.LENGTH_SHORT).show();
 
-                        Calendar calendar=Calendar.getInstance();
+                        //SimpleDateFormat format=new SimpleDateFormat("dd//mm//yyyy");
 
-                        Date today = calendar.getTime();
+                       // Date date = format.parse(det);
 
-                        materialCalendarView.getCurrentDate();
-
-
+                       // mills = date.getTime();
 
 
 
 
+                        //cal.getInstance().setTime(date);
 
-                        materialCalendarView.setCurrentDate(date);
+                       // cal=format.getCalendar();
+                      // cal.setTime(date);
+
+                        //simpleCalendarView.setDate(mills);
+
+
+
+
+                       // simpleCalendarView.setDate(mills);
+
+
+
 
 
 
@@ -118,84 +135,27 @@ public class MainActivity extends AppCompatActivity {
                     } catch (ParseException e) {
                         e.printStackTrace();
                     }
-
-
                 }
-                  for(Event event : events)
-                  {
-                     // EventDecorator eventDecorator=new EventDecorator(materialCalendarView,event.getDate());
-
-                  }
-
 
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
 
-                Toast.makeText(MainActivity.this, "" +error, Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "" + error, Toast.LENGTH_SHORT).show();
 
             }
         });
 
-        requestQueue.add(jsonArrayRequest);
+        requestQueue.add(jsn);
+
+
+
+
+
+
+
+
     }
 
-    private HashSet<CalendarDay> getCalendarDaysSet(Calendar cal1) {
-
-        HashSet<CalendarDay> setDays = new HashSet<>();
-        //while (cal1.getTime().before(cal1.getTime())) {
-          //  CalendarDay calDay = CalendarDay.from(2017,03,1);
-           // setDays.add(calDay);
-            //cal1.add(android.icu.util.Calendar.DATE, 1);
-       // }
-
-        return setDays;
     }
-
-    //for (Event event : events) {
-      //  EventDecorator eventDecorator = new EventDecorator(calendarView, event.getDate(), event.getColor());
-      //  calendarView.addDecorator(eventDecorator);
-   // }
-
-    @RequiresApi(api = Build.VERSION_CODES.N)
-    private HashSet<CalendarDay> getCalendarDaysSet(Calendar cal1, android.icu.util.Calendar cal2) {
-        HashSet<CalendarDay> setDays = new HashSet<>();
-        while (cal1.getTime().before(cal2.getTime())) {
-            CalendarDay calDay = CalendarDay.from(2017,03,1);
-            setDays.add(calDay);
-            //cal1.add(android.icu.util.Calendar.DATE, 1);
-        }
-
-        return setDays;
-    }
-
-
-    public class EventDecorator implements DayViewDecorator {
-
-
-        private CalendarDay date;
-
-        public EventDecorator(int colorGreen, HashSet<CalendarDay> setDays) {
-            date = CalendarDay.from((MainActivity.date));
-        }
-
-        @Override
-        public boolean shouldDecorate(CalendarDay day) {
-            return date != null && day.equals(date);
-        }
-
-        @Override
-        public void decorate(DayViewFacade view) {
-
-            view.addSpan(new ForegroundColorSpan(Color.RED));
-
-        }
-
-        public void setDate(Date date) {
-            this.date = CalendarDay.from(date);
-        }    }
-
-
-
-}
